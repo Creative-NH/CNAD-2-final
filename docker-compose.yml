@@ -1,0 +1,131 @@
+version: "3.8"
+
+services:
+  user_management:
+    build: ./user_management
+    ports:
+      - "8081:8080"
+    env_file:
+      - user_management/.env
+    depends_on:
+      - user_db
+
+  user_db:
+    image: mysql:latest
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: user_management_db
+    ports:
+      - "3307:3306"
+
+  self_assessment:
+    build: ./self_assessment
+    ports:
+      - "8082:8080"
+    env_file:
+      - self_assessment/.env
+    depends_on:
+      - self_assessment_db
+
+  self_assessment_db:
+    image: mysql:latest
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: self_assessment_db
+    ports:
+      - "3308:3306"
+
+  risk_assessment:
+    build: ./risk_assessment
+    ports:
+      - "8083:8080"
+    env_file:
+      - risk_assessment/.env
+    depends_on:
+      - risk_assessment_db
+
+  risk_assessment_db:
+    image: mysql:latest
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: risk_assessment_db
+    ports:
+      - "3309:3306"
+
+  notifications:
+    build: ./notifications
+    ports:
+      - "8084:8080"
+    env_file:
+      - notifications/.env
+    depends_on:
+      - notifications_db
+
+  notifications_db:
+    image: mysql:latest
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: notifications_db
+    ports:
+      - "3310:3306"
+
+  generate_report:
+    build: ./generate_report
+    ports:
+      - "8085:8080"
+    env_file:
+      - generate_report/.env
+    depends_on:
+      - report_db
+
+  report_db:
+    image: mysql:latest
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: report_db
+    ports:
+      - "3311:3306"
+
+  doctor_management:
+    build: ./doctor_management
+    ports:
+      - "8086:8080"
+    env_file:
+      - doctor_management/.env
+    depends_on:
+      - doctor_db
+
+  doctor_db:
+    image: mysql:latest
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: doctor_management_db
+    ports:
+      - "3312:3306"
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - reverse-proxy
+
+  reverse-proxy:
+    image: nginx:alpine
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "80:80"
+    depends_on:
+      - user_management
+      - self_assessment
+      - risk_assessment
+      - notifications
+      - generate_report
+      - doctor_management

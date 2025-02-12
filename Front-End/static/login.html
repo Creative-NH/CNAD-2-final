@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>Login or Sign Up</title>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <meta content="" name="keywords">
+    <meta content="" name="description">
+
+    <!-- Favicon -->
+    <link href="img/favicon.ico" rel="icon">
+
+    <!-- Google Web Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500&family=Roboto:wght@500;700;900&display=swap" rel="stylesheet"> 
+
+    <!-- Icon Font Stylesheet -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.4.1/font/bootstrap-icons.css" rel="stylesheet">
+
+    <!-- Libraries Stylesheet -->
+    <link href="lib/animate/animate.min.css" rel="stylesheet">
+    <link href="lib/owlcarousel/assets/owl.carousel.min.css" rel="stylesheet">
+    <link href="lib/tempusdominus/css/tempusdominus-bootstrap-4.min.css" rel="stylesheet" />
+
+    <!-- Customized Bootstrap Stylesheet -->
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Template Stylesheet -->
+    <link href="css/style.css" rel="stylesheet">
+</head>
+
+<body class="bg-light">
+    <script>
+        if (localStorage.getItem("user_id")) {
+            window.location.href = "index.html";
+        }
+    </script>
+    
+    <!-- Spinner Start -->
+    <div id="spinner" class="show bg-white position-fixed translate-middle w-100 vh-100 top-50 start-50 d-flex align-items-center justify-content-center">
+        <div class="spinner-grow text-primary" style="width: 3rem; height: 3rem;" role="status">
+            <span class="sr-only">Loading...</span>
+        </div>
+    </div>
+    <!-- Spinner End -->
+
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg bg-white navbar-light sticky-top p-0">
+        <a href="index.html" class="navbar-brand d-flex align-items-center px-4 px-lg-5">
+            <h1 class="m-0 text-primary"><img src="http://lionsclubs.org.sg/wp-content/uploads/2015/12/logo1.png" style="width: 10%;"> Befrienders</h1>
+        </a>
+        <button type="button" class="navbar-toggler me-4" data-bs-toggle="collapse" data-bs-target="#navbarCollapse">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarCollapse">
+            <div class="navbar-nav ms-auto p-4 p-lg-0">
+                <a href="index.html" class="nav-item nav-link active">Home</a>
+                <a href="profile.html" class="nav-item nav-link">About Us</a>
+                <a href="contact.html" class="nav-item nav-link">Contact</a>
+            </div>
+            <a href="login.html" class="btn btn-primary rounded-0 py-4 px-lg-5 d-none d-lg-block">Login/Sign Up<i class="fa fa-arrow-right ms-3"></i></a>
+        </div>
+    </nav>
+
+    <!-- Login Start -->
+    <div class="container-fluid vh-100 d-flex align-items-center justify-content-center">
+        <div class="col-md-6 col-lg-4 p-4 bg-light rounded shadow bg-white">
+            <h2 id="formTitle" class="text-center">Login</h2>
+            
+            <!-- Login Form -->
+            <form id="loginForm">
+                <div class="mb-3">
+                    <label for="loginEmail" class="form-label">Email address</label>
+                    <input type="email" class="form-control" id="loginEmail" required>
+                </div>
+                <div class="mb-3">
+                    <label for="loginPassword" class="form-label">Password</label>
+                    <input type="password" class="form-control" id="loginPassword" required>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Login</button>
+            </form>
+
+            <!-- Register Form (Initially Hidden) -->
+            <form id="registerForm" class="d-none">
+                <div class="mb-3">
+                    <label for="registerName" class="form-label">Full Name</label>
+                    <input type="text" class="form-control" id="registerName" required>
+                    <span class="text-danger" id="errorName"></span>
+                </div>
+                <div class="mb-3">
+                    <label for="registerEmail" class="form-label">Email address</label>
+                    <input type="email" class="form-control" id="registerEmail" required>
+                    <span class="text-danger" id="errorEmail"></span>
+                </div>
+                <div class="mb-3">
+                    <label for="registerPassword" class="form-label">Password</label>
+                    <input type="password" class="form-control" id="registerPassword" required>
+                    <span class="text-danger" id="errorPassword"></span>
+                </div>
+                <div class="mb-3">
+                    <label for="registerDateOfBirth" class="form-label">Date of Birth</label>
+                    <input type="date" class="form-control" id="registerDateOfBirth" required>
+                    <span class="text-danger" id="errorDateOfBirth"></span>
+                </div>
+                <div class="mb-3">
+                    <label for="registerPhone" class="form-label">Phone Number</label>
+                    <input type="tel" class="form-control" id="registerPhone" required>
+                    <span class="text-danger" id="errorPhone"></span>
+                </div>
+                <div class="mb-3">
+                    <label for="registerAddress" class="form-label">Address</label>
+                    <textarea class="form-control" id="registerAddress" rows="2" required></textarea>
+                    <span class="text-danger" id="errorAddress"></span>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Register</button>
+            </form>
+
+            <!-- Toggle Button -->
+            <div class="text-center mt-3">
+                <button id="toggleButton" class="btn btn-link">Don't have an account? Register</button>
+            </div>
+            <div class="text-center mt-3">
+                <button id="doctorButton" class="btn btn-link">Doctor Login</button>
+            </div>
+
+            <p id="errorMessage" class="text-danger text-center mt-2"></p> 
+        </div>
+    </div>
+    <!-- Login End -->
+
+    <!-- Footer Start -->
+    <div class="container-fluid bg-dark text-light footer mt-5 pt-5 wow fadeIn" data-wow-delay="0.1s">
+        <div class="container py-5">
+            <div class="row g-5">
+                <div class="col-lg-3 col-md-6">
+                    <h5 class="text-light mb-4">Address</h5>
+                    <p class="mb-2"><i class="fa fa-map-marker-alt me-3"></i>Blk 130, Bukit Merah View, #01-358, Singapore 150130</p>
+                    <p class="mb-2"><i class="fa fa-phone-alt me-3"></i>1800 375 8600</p>
+                    <p class="mb-2"><i class="fa fa-envelope me-3"></i>distsecy@lionsclubs.org.sg</p>
+                    <div class="d-flex pt-2">
+                        <a class="btn btn-outline-light btn-social rounded-circle" href=""><i class="fab fa-twitter"></i></a>
+                        <a class="btn btn-outline-light btn-social rounded-circle" href=""><i class="fab fa-facebook-f"></i></a>
+                        <a class="btn btn-outline-light btn-social rounded-circle" href=""><i class="fab fa-youtube"></i></a>
+                        <a class="btn btn-outline-light btn-social rounded-circle" href=""><i class="fab fa-linkedin-in"></i></a>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <h5 class="text-light mb-4">Quick Links</h5>
+                    <a class="btn btn-link" href="">About Us</a>
+                    <a class="btn btn-link" href="">Contact Us</a>
+                    <a class="btn btn-link" href="">Our Services</a>
+                    <a class="btn btn-link" href="">Terms & Conditions</a>
+                    <a class="btn btn-link" href="">Support</a>
+                </div>
+            </div>
+        </div>
+        <div class="container">
+            <div class="copyright">
+                <div class="row">
+                    <div class="col-md-6 text-center text-md-start mb-3 mb-md-0">
+                        &copy; <a class="border-bottom" href="#">Lions Befrienders</a>, All Rights Reserved.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Footer End -->
+
+
+    <!-- Back to Top -->
+    <a href="#" class="btn btn-lg btn-primary btn-lg-square rounded-circle back-to-top"><i class="bi bi-arrow-up"></i></a>
+
+
+    <!-- JavaScript -->
+    <script>
+        // Toggle between Login and Register forms
+        document.getElementById("toggleButton").addEventListener("click", function () {
+            const loginForm = document.getElementById("loginForm");
+            const registerForm = document.getElementById("registerForm");
+            const formTitle = document.getElementById("formTitle");
+            const toggleButton = document.getElementById("toggleButton");
+
+            if (loginForm.classList.contains("d-none")) {
+                loginForm.classList.remove("d-none");
+                registerForm.classList.add("d-none");
+                formTitle.innerText = "Login";
+                toggleButton.innerText = "Don't have an account? Register";
+            } else {
+                loginForm.classList.add("d-none");
+                registerForm.classList.remove("d-none");
+                formTitle.innerText = "Register";
+                toggleButton.innerText = "Already have an account? Login";
+            }
+        });
+
+        document.getElementById("doctorButton").addEventListener("click", function () {
+            window.location.href = "doctorLogin.html";
+        });
+        
+        document.getElementById("loginForm").addEventListener("submit", async function (event) {
+            event.preventDefault();
+            const email = document.getElementById("loginEmail").value;
+            const password = document.getElementById("loginPassword").value;
+            const errorMessage = document.getElementById("errorMessage");
+            errorMessage.textContent = ""; // Clear previous errors
+
+            try {
+                const response = await fetch("http://localhost:5001/api/authenticate", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ email, password })
+                });
+
+                // Handle non-JSON responses safely
+                const responseText = await response.text();
+                let data;
+                try {
+                    data = JSON.parse(responseText);
+                } catch {
+                    data = { message: responseText }; // Fallback if response isn't JSON
+                }
+
+                if (!response.ok) {
+                    errorMessage.textContent = data.message || "Invalid email or password";
+                    console.error("Login error:", data);
+                    return;
+                }
+
+                localStorage.setItem("user_id", data.user_id);
+                window.location.href = "index.html";
+            } catch (error) {
+                console.error("Fetch error:", error);
+                errorMessage.textContent = "Failed to connect to server. Please try again.";
+            }
+        });
+
+        document.getElementById("registerForm").addEventListener("submit", async function (event) {
+            event.preventDefault();
+            
+             // Reset previous error messages
+            document.querySelectorAll(".text-danger").forEach(el => el.textContent = "");
+            const dobFormatted = new Date(document.getElementById("registerDateOfBirth").value.trim()).toISOString().split('T')[0];
+            const newUser = {
+                name: document.getElementById("registerName").value.trim(),
+                email: document.getElementById("registerEmail").value.trim(),
+                password: document.getElementById("registerPassword").value.trim(),
+                dateOfBirth: dobFormatted,
+                phoneNumber: document.getElementById("registerPhone").value.trim(),
+                address: document.getElementById("registerAddress").value.trim()
+            };
+
+            try {
+                const response = await fetch("http://localhost:5001/api/register", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(newUser)
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    console.error("Registration error:", data);
+
+                   // Loop through the error messages and display each one in the correct field
+                   Object.keys(data).forEach(field => {
+                        const errorElement = document.getElementById(`error${field.charAt(0).toUpperCase() + field.slice(1)}`);
+                        if (errorElement) {
+                            errorElement.textContent = data[field];
+                        }
+                    });
+
+                    return;
+                }
+
+                alert("Registration successful! Please login.");
+                document.getElementById("toggleButton").click(); // Switch to login form
+            } catch (error) {
+                console.error("Fetch error:", error);
+                document.getElementById("errorMessage").textContent = "Network error, please try again.";
+            }
+        });
+    </script>
+
+    <!-- JavaScript Libraries -->
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="lib/wow/wow.min.js"></script>
+    <script src="lib/easing/easing.min.js"></script>
+    <script src="lib/waypoints/waypoints.min.js"></script>
+    <script src="lib/counterup/counterup.min.js"></script>
+    <script src="lib/owlcarousel/owl.carousel.min.js"></script>
+    <script src="lib/tempusdominus/js/moment.min.js"></script>
+    <script src="lib/tempusdominus/js/moment-timezone.min.js"></script>
+    <script src="lib/tempusdominus/js/tempusdominus-bootstrap-4.min.js"></script>
+
+    <!-- Template Javascript -->
+    <script src="js/main.js"></script>
+</body>
+
+</html>

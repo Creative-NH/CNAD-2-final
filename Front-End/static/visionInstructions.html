@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <title>Instructions</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #ECF0F4; /* Updated background color */
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .content-wrapper {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 80vh; /* Keep content centered */
+            width: 100%;
+        }
+
+        .instruction-container {
+            text-align: center;
+            max-width: 600px;
+            padding: 20px;
+        }
+
+        .instruction-section {
+            display: none; /* Hide all sections by default */
+        }
+
+        .instruction-section.active {
+            display: block; /* Show the active section */
+        }
+
+        .instruction-section h2 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .instruction-section img {
+            display: block;
+            margin: 0 auto 80px; /* Centers the image */
+            width: 120px; /* Adjust the width */
+            height: auto; /* Maintain aspect ratio */
+        }
+
+        .instruction-section p {
+            font-size: 28px; /* Increase font size */
+            text-align: center; /* Ensure text is centered */
+            margin-top: 15px; /* Add spacing */
+            font-weight: 200;
+        }
+
+
+        /* Pagination and Button Container */
+        .bottom-container {
+            position: fixed;
+            bottom: 30px; /* Keeps it at the bottom with margin */
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .dot-pagination {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 15px;
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            background-color: #ccc;
+            border-radius: 50%;
+            margin: 0 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .dot.active {
+            background-color: #333; /* Highlight the active dot */
+        }
+
+        .next-button {
+            padding: 12px 24px;
+            font-size: 16px;
+            background-color: transparent; /* Transparent background */
+            color: #0d6efd; /* Bootstrap primary blue */
+            border: 2px solid #0d6efd; /* Blue border */
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s, color 0.3s;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .next-button:hover {
+            background-color: #0d6efd; /* Blue background on hover */
+            color: white; /* White text on hover */
+            border: 2px solid transparent; /* Hide border on hover */
+        }
+
+        
+    </style>
+</head>
+<body>
+
+    <div class="content-wrapper">
+        <div class="instruction-container">
+            <!-- Section 1 -->
+            <div class="instruction-section active">
+                <img src="https://cdn-icons-png.flaticon.com/512/0/370.png">
+                <p>In your device settings, turn your screen brightness all the way up for the most accurate results.</p>
+            </div>
+
+            <!-- Section 2 -->
+            <div class="instruction-section">
+                <img src="https://www.freepnglogos.com/uploads/glasses-png/glasses-frame-vector-graphic-pixabay-29.png">
+                <p>Be prepare to wear ur glasses if need!</p>
+            </div>
+
+            <!-- Section 3 -->
+            <div class="instruction-section">
+                <img src="https://cdn-icons-png.flaticon.com/512/8231/8231725.png">
+                <p><strong>Eyes Ready?</strong><br>Cover your left eye.</p>
+            </div>
+
+            <!-- Section 4 -->
+            <div class="instruction-section">
+                <img src="https://cdn-icons-png.flaticon.com/128/16882/16882070.png">
+                <p><strong>Keey Away.</strong><br>Keep your device arm's length during the check.</p>
+            </div>
+
+            <div class="instruction-section">
+                <img src="https://cdn-icons-png.flaticon.com/128/4367/4367959.png">
+                <p><strong>Mark the spot.</strong><br>See top arrow? Mark the corresponding spot on the ring?</p>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Pagination Dots and Button at the Bottom -->
+    <div class="bottom-container">
+        <div class="dot-pagination">
+            <div class="dot active" data-index="0"></div>
+            <div class="dot" data-index="1"></div>
+            <div class="dot" data-index="2"></div>
+            <div class="dot" data-index="3"></div>
+            <div class="dot" data-index="4"></div>
+        </div>
+        <button class="next-button">Next Step</button>
+    </div>
+
+    <script>
+        const sections = document.querySelectorAll('.instruction-section');
+        const dots = document.querySelectorAll('.dot');
+        const nextButton = document.querySelector('.next-button');
+        let currentSection = 0;
+
+        // Function to update the active section and dots
+        function updateSection(index) {
+            // Hide all sections
+            sections.forEach(section => section.classList.remove('active'));
+            // Show the current section
+            sections[index].classList.add('active');
+
+            // Update dot pagination
+            dots.forEach(dot => dot.classList.remove('active'));
+            dots[index].classList.add('active');
+
+            // Update the button text for the final section
+            if (index === sections.length - 1) {
+                nextButton.textContent = "I'm Ready";
+            } else {
+                nextButton.textContent = "Next Step";
+            }
+        }
+
+        // Next button click event
+        nextButton.addEventListener('click', () => {
+            if (currentSection < sections.length - 1) {
+                currentSection++;
+                updateSection(currentSection);
+            } else {
+                // Redirect to the test page when "I'm Ready" is clicked
+                window.location.href = "contrastVisionTest.html";
+            }
+        });
+
+        // Dot pagination click event
+        dots.forEach((dot, index) => {
+            dot.addEventListener('click', () => {
+                currentSection = index;
+                updateSection(currentSection);
+            });
+        });
+
+        // Initialize the first section
+        updateSection(currentSection);
+    </script>
+
+</body>
+</html>

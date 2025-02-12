@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pie Chart with Arrow Directions</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+        }
+
+        .arrow-display {
+            font-size: 40px;
+            margin-bottom: 10px;
+            opacity: 1; /* Default opacity */
+            transition: opacity 0.3s; /* Smooth opacity transition */
+        }
+
+        .pie-chart-container {
+            transform: rotate(-22.5deg); /* Rotate the entire pie chart */
+        }
+
+        .pie-chart {
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            position: relative;
+            background: conic-gradient(
+                black 0% 12.4%, white 12.4% 12.5%, 
+                black 12.5% 24.9%, white 24.9% 25%, 
+                black 25% 37.4%, white 37.4% 37.5%, 
+                black 37.5% 49.9%, white 49.9% 50%, 
+                black 50% 62.4%, white 62.4% 62.5%, 
+                black 62.5% 74.9%, white 74.9% 75%, 
+                black 75% 87.4%, white 87.4% 87.5%, 
+                black 87.5% 99.9%, white 99.9% 100%
+            );
+            clip-path: circle(50% at 50% 50%);
+        }
+
+        .pie-chart::before {
+            content: '';
+            position: absolute;
+            width: 180px;
+            height: 180px;
+            background: white;
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2;
+        }
+
+        .pie-piece {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            clip-path: polygon(50% 50%, 100% 50%, 100% 0%);
+            transform-origin: 50% 50%;
+            cursor: pointer;
+            z-index: 1;
+            transition: opacity 0.5s;
+        }
+
+        .pie-piece:hover {
+            opacity: 0.7;
+        }
+
+        .feedback-icon {
+            position: fixed;
+            top: 46.5%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 80px;
+            z-index: 1000;
+            display: none; /* Initially hidden */
+        }
+
+        .tick {
+            color: green; /* Green color for tick */
+        }
+
+        .cross {
+            color: red; /* Red color for cross */
+        }
+
+        .transition-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #f0f0f0;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            z-index: 1099;
+        }
+
+        .transition-screen h2 {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: black;
+        }
+
+        .transition-screen p {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: black;
+        }
+
+        .transition-img {
+            width: 120px; /* Adjust image size */
+            height: auto;
+            margin-bottom: 20px; /* Adds space between image and text */
+        }
+
+        .transition-screen button {
+            padding: 10px 20px;
+            font-size: 18px;
+            border: none;
+            background: #007bff;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+.transition-screen button:hover {
+    background: #0056b3;
+}
+
+
+        /* Correct positioning for each pie piece */
+        .pie-piece:nth-child(1) { transform: rotate(0deg); }
+        .pie-piece:nth-child(2) { transform: rotate(45deg); }
+        .pie-piece:nth-child(3) { transform: rotate(90deg); }
+        .pie-piece:nth-child(4) { transform: rotate(135deg); }
+        .pie-piece:nth-child(5) { transform: rotate(180deg); }
+        .pie-piece:nth-child(6) { transform: rotate(225deg); }
+        .pie-piece:nth-child(7) { transform: rotate(270deg); }
+        .pie-piece:nth-child(8) { transform: rotate(315deg); }
+    </style>
+</head>
+<body>
+
+    <div class="arrow-display">⬆️</div> <!-- Display current arrow -->
+    <div class="pie-chart-container">
+        <div class="pie-chart">
+            <div class="pie-piece" onclick="checkAnswer('↗️')"></div> <!-- Piece 1 -->
+            <div class="pie-piece" onclick="checkAnswer('➡️')"></div> <!-- Piece 2 -->
+            <div class="pie-piece" onclick="checkAnswer('↘️')"></div> <!-- Piece 3 -->
+            <div class="pie-piece" onclick="checkAnswer('⬇️')"></div> <!-- Piece 4 -->
+            <div class="pie-piece" onclick="checkAnswer('↙️')"></div> <!-- Piece 5 -->
+            <div class="pie-piece" onclick="checkAnswer('⬅️')"></div> <!-- Piece 6 -->
+            <div class="pie-piece" onclick="checkAnswer('↖️')"></div> <!-- Piece 7 -->
+            <div class="pie-piece" onclick="checkAnswer('⬆️')"></div> <!-- Piece 8 -->
+        </div>
+    </div>
+    <!-- <h3 id="tries-left">Tries left: 5</h3> Display tries left -->
+    <h3 id="eye-indicator">Cover your left eye</h3> <!-- Display which eye is being tested -->
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function () {
+    const $arrowDisplay = $('.arrow-display');
+    const $tick = $('<div class="feedback-icon tick">✔️</div>').appendTo('body').hide(); // Tick icon for correct answers
+    const $cross = $('<div class="feedback-icon cross">❌</div>').appendTo('body').hide(); // Cross icon for wrong answers
+    const $triesLeftDisplay = $('#tries-left');
+    const $eyeIndicator = $('#eye-indicator');
+    const $transitionScreen = $('<div class="transition-screen"></div>').appendTo('body').hide(); // Transition screen
+    let userID = parseInt(localStorage.getItem("user_id"), 10); // Convert to integer (base 10)
+
+    if (isNaN(userID)) {
+        console.error("Invalid user ID from localStorage");
+        userID = 0; // Default value if conversion fails
+    }
+
+    // Mapping of pie pieces to directions
+    const directions = ['↗️', '➡️', '↘️', '⬇️', '↙️', '⬅️', '↖️', '⬆️'];
+    let currentDirection = '⬆️'; // Start with piece 8
+    let triesLeft = 5;
+    let correctAnswers = 0;
+    let arrowOpacity = 1;
+    let reductionFactor = 0.5;
+    let currentEye = 'left';
+    let leftEyeScore = 0;
+    let rightEyeScore = 0;
+
+    function generateNewDirection() {
+        currentDirection = directions[Math.floor(Math.random() * directions.length)];
+        $arrowDisplay.text(currentDirection);
+    }
+
+    function showTransitionScreen() {
+    setTimeout(() => { // Delay the transition screen appearance
+        $('body').append(`
+            <div class="transition-screen">
+                <img src="https://cdn-icons-png.flaticon.com/512/8231/8231725.png" class="transition-img">
+                <h2>Cover your right eye</h2>
+                <p>Make sure your right eye is completely covered.</p>
+                <button id="ready-btn" class="btn btn-primary btn-lg">I'm Ready</button>
+            </div>
+        `);
+
+        // Add event listener for "I'm Ready" button
+        $('#ready-btn').on('click', function () {
+            $('.transition-screen').remove();
+            startRightEyeTest(); // Continue to right eye test
+        });
+        }, 500); // Delay of 1.5 seconds before transition appears
+    }
+
+    function resetForNextEye() {
+        triesLeft = 5;
+        correctAnswers = 0;
+        arrowOpacity = 1;
+        reductionFactor = 0.5;
+        $arrowDisplay.css('opacity', arrowOpacity);
+        // $triesLeftDisplay.text(`Tries left: ${triesLeft}`);
+        generateNewDirection();
+    }
+
+    function checkAnswer(selectedDirection) {
+        if (triesLeft <= 0) {
+            if (currentEye === 'left') {
+                leftEyeScore = correctAnswers;
+                currentEye = 'right';
+                $eyeIndicator.text('Testing: Right Eye');
+                showTransitionScreen(); // Display the transition screen before starting right eye test
+                return;
+            } else {
+                rightEyeScore = correctAnswers;
+                postResults();
+                return;
+            }
+        }
+
+        triesLeft--;
+        $triesLeftDisplay.text(`Tries left: ${triesLeft}`);
+
+        if (selectedDirection === currentDirection) {
+            correctAnswers++;
+            $tick.fadeIn().delay(800).fadeOut();
+            arrowOpacity -= reductionFactor;
+            $arrowDisplay.css('opacity', arrowOpacity.toFixed(3));
+            reductionFactor /= 2;
+        } else {
+            $cross.fadeIn().delay(800).fadeOut();
+        }
+
+        setTimeout(generateNewDirection, 1500);
+
+        if (triesLeft === 0) {
+            setTimeout(() => {
+                if (currentEye === 'left') {
+                    leftEyeScore = correctAnswers;
+                    currentEye = 'right';
+                    $eyeIndicator.text('Cover your right eye');
+                    showTransitionScreen();
+                } else {
+                    rightEyeScore = correctAnswers;
+                    postResults();
+                }
+            }, 500);
+        }
+    }
+
+    function startRightEyeTest() {
+        resetForNextEye();
+    }
+
+    function postResults() {
+        const comment = generateComment(leftEyeScore, rightEyeScore);
+        const result = {
+            UserID: userID,
+            LeftEyeScore: leftEyeScore,
+            RightEyeScore: rightEyeScore,
+            Comments: comment
+        };
+
+        $.ajax({
+            url: 'http://localhost:8088/postVisionResult',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(result),
+            success: function (data) {
+                console.log('Success:', data);
+                alert('Results posted successfully!');
+                window.location.href = "contrastResult.html";
+            },
+            error: function (error) {
+                console.error('Error:', error);
+                alert('Error posting results.');
+            }
+        });
+    }
+
+    function generateComment(leftScore, rightScore) {
+        let overallComment = "";
+        let leftEyeComment = "";
+        let rightEyeComment = "";
+
+        let totalScore = leftScore + rightScore;
+
+        if (totalScore >= 9) {
+            overallComment = "You have perfect eyesight.";
+        } else if (totalScore >= 7) {
+            overallComment = "You have very good eye contrast.";
+        } else if (totalScore === 6) {
+            overallComment = "Your eye contrast is moderate.";
+        }
+
+        if (leftScore <= 2) {
+            leftEyeComment = leftScore === 2 ? "Your left eye contrast is below average."
+                : leftScore === 1 ? "Your left eye contrast is weak."
+                : "Your left eye contrast is severely impaired.";
+        }
+
+        if (rightScore <= 2) {
+            rightEyeComment = rightScore === 2 ? "Your right eye contrast is below average."
+                : rightScore === 1 ? "Your right eye contrast is weak."
+                : "Your right eye contrast is severely impaired.";
+        }
+
+        if (leftScore === 0 && rightScore === 0) {
+            overallComment = "Your contrast vision is completely impaired.";
+        }
+
+        return `${overallComment} ${leftEyeComment} ${rightEyeComment}`.trim();
+    }
+
+    generateNewDirection();
+
+    $('.pie-piece').on('click', function () {
+        const selectedDirection = $(this).attr('onclick').match(/checkAnswer\('(.*?)'\)/)[1];
+        checkAnswer(selectedDirection);
+    });
+});
+
+
+    </script>
+
+</body>
+</html>

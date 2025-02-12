@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contrast Vision Result</title>
+    <!-- Bootstrap CSS (Latest version from CDN) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap JavaScript Bundle (Includes Popper.js) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+        }
+
+        .result-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 350px;
+        }
+
+        .result-card h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .result-card p {
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+
+        .result-card img {
+            width: 100px;
+            height: 100px;
+            margin-bottom: 20px;
+        }
+
+        .scores {
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        .comments {
+            font-size: 16px;
+            font-style: italic;
+            color: #555;
+        }
+
+        .view-report-btn {
+            display: none;
+            background-color: #007bff;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 15px;
+            margin: 20px auto; /* Centers the button */
+            display: block; /* Ensures it takes up a full line */
+            text-align: center;
+            width: 100%;
+        }
+
+        .view-report-btn:hover {
+            background-color: #0056b3;
+        }
+
+        .doctor-message {
+            display: none;
+            margin-top: 15px;
+            color: red;
+            font-weight: bold;
+        }
+
+        
+    </style>
+</head>
+<body>
+
+    <div class="result-card">
+        <h1>Contrast Vision Result</h1>
+        <p id="result-outcome"></p>
+        <img id="result-image" src="" alt="Result Image">
+        <div class="scores">
+            Left Eye Score: <span id="left-eye-score"></span><br>
+            Right Eye Score: <span id="right-eye-score"></span>
+        </div>
+        <div class="comments">
+            Comments: <span id="result-comments"></span>
+        </div>
+
+        
+        <!-- Message for Automatic Report Sending -->
+        <p id="doctor-message" class="doctor-message">Your report has been sent to the doctor for review.</p>
+        
+        <!-- View Report Button (Hidden Initially)
+        <button id="view-report-btn" class="view-report-btn" onclick="viewReport()">View Full Report</button> -->
+        <!-- Retake Assessment Button -->
+        <!-- Full-width buttons with spacing -->
+        <div class="container text-center mt-4">
+            <a href="visionInstructions.html" class="btn btn-primary btn-lg w-100 mb-3">Retake Assessment</a>
+            <a href="assessmentHistory.html" class="btn btn-secondary btn-lg w-100">View Assessment History</a>
+        </div>
+
+
+    </div>
+
+    <script>
+        const userID = localStorage.getItem("user_id");
+        // Function to fetch the latest result from the database
+        async function fetchLatestResult() {
+            try {
+                const response = await fetch(`http://localhost:8088/getLatestResult?userID=${userID}`); // Corrected string interpolation
+                if (!response.ok) {
+                    throw new Error('Failed to fetch result');
+                }
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error('Error fetching result:', error);
+                return null;
+            }
+        }
+
+        // Function to determine the outcome and image based on scores
+        function determineOutcome(leftScore, rightScore) {
+            let outcome, imageSrc;
+            const averageScore = (leftScore + rightScore) / 2;
+
+            if (averageScore >= 4.5) {
+                outcome = "Very Good\n Your contrast vision is perfect!";
+                imageSrc = "https://cdn-icons-png.flaticon.com/128/1825/1825129.png"; // Green tick
+            } else if (averageScore >= 3.5) {
+                outcome = "Good\n You have a good contrast vision!";
+                imageSrc = "https://cdn-icons-png.flaticon.com/128/15648/15648297.png"; // Yellow thumbs up
+            } else if (averageScore >= 2.5) {
+                outcome = "Average\n Your contrast vision is healthy!";
+                imageSrc = "https://cdn-icons-png.flaticon.com/128/16443/16443159.png"; // Orange neutral face
+            } else {
+                outcome = "Needs Improvement\n Your contrast vision is poor!";
+                imageSrc = "https://cdn-icons-png.flaticon.com/128/13849/13849516.png"; // Red cross
+            }
+
+            return { outcome, imageSrc };
+        }
+
+        // Function to send an automatic report to the doctor if needed
+        function sendReportToDoctor(leftScore, rightScore) {
+            if (leftScore <= 2 || rightScore <= 2) {
+                document.getElementById("doctor-message").style.display = "block";
+
+                // Simulate sending report (Replace with actual API if available)
+                fetch("http://localhost:8088/sendReportToDoctor", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        user_id: 5,
+                        left_eye_score: leftScore,
+                        right_eye_score: rightScore,
+                        comments: "The user's vision is significantly reduced. Please review."
+                    })
+                })
+                .then(response => response.json())
+                .then(data => console.log("Report sent to doctor:", data))
+                .catch(error => console.error("Error sending report:", error));
+            }
+        }
+
+        // Function to convert numeric score to descriptive term with color
+        function getVisionTerm(score) {
+            if (score === 5) return { text: "Perfect Vision", color: "text-success fw-bold" };   // Green
+            if (score === 4) return { text: "Very Good", color: "text-primary fw-bold" };       // Blue
+            if (score === 3) return { text: "Moderate", color: "text-info fw-bold" };           // Light Blue
+            if (score === 2) return { text: "Below Average", color: "text-warning fw-bold" };   // Yellow
+            if (score === 1) return { text: "Weak Vision", color: "text-danger fw-bold" };      // Red
+            return { text: "Severely Impaired", color: "text-dark fw-bold" };                   // Dark Gray (Score 0)
+        }
+
+        // Function to display the result
+        async function displayResult() {
+            const result = await fetchLatestResult();
+            if (result) {
+                const { LeftEyeScore, RightEyeScore, Comments } = result;
+                const { outcome, imageSrc } = determineOutcome(LeftEyeScore, RightEyeScore);
+
+                // Convert numeric scores to word terms and colors
+                const leftEye = getVisionTerm(LeftEyeScore);
+                const rightEye = getVisionTerm(RightEyeScore);
+
+                // Display the result
+                document.getElementById('result-outcome').textContent = outcome;
+                document.getElementById('result-image').src = imageSrc;
+                document.getElementById('left-eye-score').innerHTML = `<span class="${leftEye.color}">${leftEye.text}</span>`;
+                document.getElementById('right-eye-score').innerHTML = `<span class="${rightEye.color}">${rightEye.text}</span>`;
+                document.getElementById('result-comments').textContent = Comments;
+
+                // Show "View Report" button if any score is ≤ 2
+                if (LeftEyeScore <= 2 || RightEyeScore <= 2) {
+                    sendReportToDoctor(LeftEyeScore, RightEyeScore);
+                }
+            } else {
+                document.getElementById('result-outcome').textContent = "Failed to load result.";
+            }
+        }
+
+
+
+        // Function to view the report (redirects to report page)
+        function viewReport() {
+            window.location.href = "report.html"; // Redirect to the report page
+        }
+
+        // Fetch and display the result when the page loads
+        displayResult();
+    </script>
+
+</body>
+</html>

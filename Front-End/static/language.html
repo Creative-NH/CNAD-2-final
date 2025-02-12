@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Select Language</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Select Your Language</h1>
+        <button class="lang-button" onclick="startQuiz('English')">English</button>
+        <button class="lang-button" onclick="startQuiz('Chinese')">中文 (Chinese)</button>
+        <button class="lang-button" onclick="startQuiz('Malay')">Bahasa Melayu</button>
+        <button class="lang-button" onclick="startQuiz('Tamil')">தமிழ் (Tamil)</button>
+    </div>
+
+    <script>
+        function startQuiz(language) {
+            localStorage.setItem("selectedLanguage", language);
+            window.location.href = "quiz.html";
+        }
+    </script>
+</body>
+</html>
