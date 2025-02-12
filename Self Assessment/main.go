@@ -12,6 +12,7 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
+	"github.com/joho/godotenv"
 	"github.com/rs/cors"
 )
 
@@ -26,6 +27,11 @@ func connectDB(dbUser, dbPassword, dbHost, dbName string) (*sql.DB, error) {
 }
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatalf("Error loading .env file:", err)
+	}
+
 	// Get database connection details from environment variables
 	dbUser, dbPassword, dbHost, dbName := os.Getenv("DB_USER"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_HOST"), os.Getenv("DB_NAME")
 	if dbUser == "" || dbPassword == "" || dbHost == "" || dbName == "" {
@@ -89,7 +95,7 @@ type Assessment struct {
 	RiskLevel      string `json:"riskLevel"`
 	Recommendation string `json:"recommendation"`
 	DateCreated    string `json:"dateCreated,omitempty"`
-	UserID	   	   int 	  `json:"user_id,omitempty"`
+	UserID         int    `json:"user_id,omitempty"`
 }
 
 // Handler to retrieve questionnaire questions based on language (GET request with query string)
@@ -283,7 +289,7 @@ func addAssessmentHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 	if riskResult.RiskLevel == "High" {
 		go sendAlertToDoctors(req.UserID, assessmentID)
 	}
-	
+
 	// Send response
 	response := map[string]interface{}{
 		"assessment_id":      assessmentID,
