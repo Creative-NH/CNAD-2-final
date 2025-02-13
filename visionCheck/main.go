@@ -11,17 +11,19 @@ import (
 )
 
 type VisionResult struct {
+	ID            int    `json:"ID"` // Added field for the primary key
 	UserID        int    `json:"UserID"`
 	LeftEyeScore  int    `json:"LeftEyeScore"`
 	RightEyeScore int    `json:"RightEyeScore"`
 	Comments      string `json:"Comments"`
-	CreatedAt     string `json:"CreatedAt"` // Added field
+	CreatedAt     string `json:"CreatedAt"` // Keeps CreatedAt field
 }
 
 func main() {
 	http.HandleFunc("/postVisionResult", handlePostRequest)
 	http.HandleFunc("/getLatestResult", getLatestResult)
 	http.HandleFunc("/getAllVisionResults", getAllVisionResults)
+	http.HandleFunc("/getVisionResult", getVisionResult)
 
 	log.Println("Vision service running on port 8088")
 	log.Fatal(http.ListenAndServe(":8088", nil))
@@ -57,15 +59,19 @@ func handlePostRequest(w http.ResponseWriter, r *http.Request) {
 	defer db.Close()
 
 	query := `INSERT INTO visionResults (UserID, LeftEyeScore, RightEyeScore, Comments) VALUES (?, ?, ?, ?)`
-	_, err = db.Exec(query, result.UserID, result.LeftEyeScore, result.RightEyeScore, result.Comments)
+	res, err := db.Exec(query, result.UserID, result.LeftEyeScore, result.RightEyeScore, result.Comments)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
+	// Get the inserted ID
+	insertedID, _ := res.LastInsertId()
+	result.ID = int(insertedID) // Assign ID to result struct
+
 	// Call Email Microservice if vision score is low
 	if result.LeftEyeScore <= 2 || result.RightEyeScore <= 2 {
-		go callEmailMicroservice(result)
+		go callEmailMicroservice(result) // Now includes correct ID
 	}
 
 	w.WriteHeader(http.StatusOK)
@@ -101,8 +107,11 @@ func getLatestResult(w http.ResponseWriter, r *http.Request) {
 	defer db.Close()
 
 	var result VisionResult
-	query := `SELECT UserID, LeftEyeScore, RightEyeScore, Comments, CreatedAt FROM visionResults WHERE UserID = ? ORDER BY CreatedAt DESC LIMIT 1`
-	err = db.QueryRow(query, userID).Scan(&result.UserID, &result.LeftEyeScore, &result.RightEyeScore, &result.Comments, &result.CreatedAt) // Added CreatedAt
+	query := `SELECT * FROM visionResults 
+			  WHERE UserID = ? 
+			  ORDER BY CreatedAt DESC 
+			  LIMIT 1`
+	err = db.QueryRow(query, userID).Scan(&result.ID, &result.UserID, &result.LeftEyeScore, &result.RightEyeScore, &result.Comments, &result.CreatedAt) // Fetching latest ID
 	if err != nil {
 		if err == sql.ErrNoRows {
 			http.Error(w, "No results found", http.StatusNotFound)
@@ -171,6 +180,65 @@ func getAllVisionResults(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(results)
+}
+
+// get visionResult for a sepcific user
+// Get a Vision Result by visionAssessment_id
+func getVisionResult(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	if r.Method != http.MethodPost {
+		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var requestData struct {
+		VisionAssessmentID int `json:"visionAssessment_id"`
+	}
+
+	// Decode request body
+	err := json.NewDecoder(r.Body).Decode(&requestData)
+	if err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	// Validate input
+	if requestData.VisionAssessmentID == 0 {
+		http.Error(w, "Missing visionAssessment_id", http.StatusBadRequest)
+		return
+	}
+
+	db, err := sql.Open("mysql", "root:04D685362v98@tcp(127.0.0.1:3306)/vision_assessment_db")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer db.Close()
+
+	var result VisionResult
+	query := `SELECT ID, UserID, LeftEyeScore, RightEyeScore, Comments, CreatedAt FROM visionResults WHERE ID = ?`
+	err = db.QueryRow(query, requestData.VisionAssessmentID).Scan(
+		&result.ID, &result.UserID, &result.LeftEyeScore, &result.RightEyeScore, &result.Comments, &result.CreatedAt)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			http.Error(w, "No vision result found", http.StatusNotFound)
+		} else {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(result)
 }
 
 // Call Email Microservice

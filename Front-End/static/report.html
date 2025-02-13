@@ -135,15 +135,23 @@
 
     <!-- JavaScript -->
     <script>
-        async function fetchAssessment() {
-            const assessmentId = new URLSearchParams(window.location.search).get("assessment_id");
-            if (!assessmentId) {
-                showError("Missing assessment ID.");
-                return;
-            }
+        async function fetchReportData() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const assessmentId = urlParams.get("assessment_id");
+            const visionAssessmentId = urlParams.get("visionAssessment_id");
 
+            if (assessmentId) {
+                await fetchAssessment(assessmentId); // Fetch Self-Assessment Data
+            } else if (visionAssessmentId) {
+                await fetchVisionResult(visionAssessmentId); // Fetch Vision Result Data
+            } else {
+                showError("Missing report ID in URL.");
+            }
+        }
+
+        // Fetches assessment report
+        async function fetchAssessment(assessmentId) {
             try {
-                // Fetch Assessment Data from Self-Assessment Service
                 const assessmentResponse = await fetch("http://localhost:5000/api/getAssessment", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -155,14 +163,53 @@
                 }
 
                 const assessmentData = await assessmentResponse.json();
-                const userId = assessmentData.user_id; // Extract User ID
+                const userId = assessmentData.user_id;
 
                 if (!userId) {
                     showError("User ID missing in assessment data.");
                     return;
                 }
 
-                // Fetch User Data from User Service
+                await fetchUserDetails(userId); // Fetch user details
+                displayAssessmentReport(assessmentData);
+            } catch (error) {
+                console.error("Error fetching assessment report:", error);
+                showError("Unable to load assessment report.");
+            }
+        }
+
+        // Fetches vision result report
+        async function fetchVisionResult(visionAssessmentId) {
+            try {
+                const visionResponse = await fetch("http://localhost:8088/getVisionResult", { // Modify the endpoint accordingly
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ visionAssessment_id: parseInt(visionAssessmentId) })
+                });
+
+                if (!visionResponse.ok) {
+                    throw new Error("Failed to fetch vision result.");
+                }
+
+                const visionData = await visionResponse.json();
+                const userId = visionData.UserID;
+
+                if (!userId) {
+                    showError("User ID missing in vision data.");
+                    return;
+                }
+
+                await fetchUserDetails(userId); // Fetch user details
+                displayVisionReport(visionData);
+            } catch (error) {
+                console.error("Error fetching vision result:", error);
+                showError("Unable to load vision result.");
+            }
+        }
+
+        // Fetches user details
+        async function fetchUserDetails(userId) {
+            try {
                 const userResponse = await fetch("http://localhost:5001/api/getUserDetails", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -174,31 +221,30 @@
                 }
 
                 const userData = await userResponse.json();
-
-                // Display Report
-                displayReport(assessmentData, userData);
+                displayUserDetails(userData);
             } catch (error) {
-                console.error("Error fetching report:", error);
-                showError("Unable to load assessment report.");
+                console.error("Error fetching user details:", error);
+                showError("Unable to load user details.");
             }
         }
 
-        function displayReport(assessment, user) {
-            document.getElementById("report-container").classList.remove("d-none");
-
-            // User Details
+        // Displays user details
+        function displayUserDetails(user) {
             document.getElementById("user-name").textContent = user.name || "N/A";
             document.getElementById("user-email").textContent = user.email || "N/A";
             document.getElementById("user-dob").textContent = user.date_of_birth || "N/A";
             document.getElementById("user-phone").textContent = user.phone_number || "N/A";
             document.getElementById("user-address").textContent = user.address || "N/A";
+        }
 
-            // Assessment Details
+        // Displays assessment report
+        function displayAssessmentReport(assessment) {
+            document.getElementById("report-container").classList.remove("d-none");
+
             document.getElementById("assessment-score").textContent = assessment.totalScore || "N/A";
             const riskLevelElement = document.getElementById("assessment-risk");
             riskLevelElement.textContent = assessment.riskLevel || "N/A";
 
-            // Apply risk color classes
             riskLevelElement.classList.remove("risk-low", "risk-moderate", "risk-high");
             if (assessment.riskLevel === "Low") {
                 riskLevelElement.classList.add("risk-low");
@@ -211,16 +257,37 @@
             document.getElementById("assessment-recommendation").textContent = assessment.recommendation || "N/A";
         }
 
+        // Displays vision report
+        function displayVisionReport(vision) {
+            document.getElementById("report-container").classList.remove("d-none");
+
+            document.getElementById("assessment-score").textContent = "Left Eye Score: " + (vision.LeftEyeScore || "N/A") + ", Right Eye Score: " + (vision.RightEyeScore || "N/A");
+            document.getElementById("assessment-risk").textContent = vision.Comments || "N/A";
+            document.getElementById("assessment-recommendation").textContent = "Test Date: " + (vision.CreatedAt || "N/A");
+        }
+
+        // Displays error message
         function showError(message) {
             const errorElement = document.getElementById("error-message");
             errorElement.textContent = message;
             errorElement.classList.remove("d-none");
         }
 
+        // Fetch report data on page load
+        fetchReportData();
+
         async function resolveAlert() {
-            const assessmentId = new URLSearchParams(window.location.search).get("assessment_id");
-            if (!assessmentId) {
-                showError("Missing assessment ID.");
+            // Check for either `assessment_id` or `visionAssessment_id`
+            const urlParams = new URLSearchParams(window.location.search);
+            const assessmentId = urlParams.get("assessment_id");
+            const visionAssessmentId = urlParams.get("visionAssessment_id");
+
+            // Determine which ID to use
+            let alertId = assessmentId || visionAssessmentId;
+            let alertType = assessmentId ? "assessment_id" : "visionAssessment_id"; 
+
+            if (!alertId) {
+                showError("Missing assessment or vision assessment ID.");
                 return;
             }
 
@@ -229,7 +296,7 @@
             }
 
             try {
-                const response = await fetch(`http://localhost:5002/api/resolveAlerts/${assessmentId}`, {
+                const response = await fetch(`http://localhost:5002/api/resolveAlerts/${alertId}`, {
                     method: "DELETE",
                     headers: { "Content-Type": "application/json" }
                 });
@@ -247,8 +314,7 @@
             }
         }
 
-        // Fetch report on page load
-        fetchAssessment();
+
         document.getElementById("resolve-alert-btn").addEventListener("click", resolveAlert);
 
         function logout() {

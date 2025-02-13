@@ -183,9 +183,18 @@
 
                     data.forEach((alert) => {
                         const row = document.createElement("tr");
+
+                        let reportLink = `report.html?assessment_id=${alert.assessment_id}`; // Default to health assessment
+                        let reportType = `Health Assessment (${alert.assessment_id})`;
+
+                        if (alert.type === "VisionAssessment") {
+                            reportLink = `report.html?visionAssessment_id=${alert.assessment_id}`;
+                            reportType = `Vision Test (${alert.assessment_id})`;
+                        }
+
                         row.innerHTML = `
                             <td>${alert.alert_id}</td>
-                            <td><a href="report.html?assessment_id=${alert.assessment_id}">${alert.assessment_id}</a></td>
+                            <td><a href="${reportLink}">${reportType}</a></td>
                             <td>${alert.sent_at}</td>
                         `;
                         tableBody.appendChild(row);
@@ -197,6 +206,7 @@
                     document.getElementById("alerts-table").innerHTML = `<tr><td colspan="3" class="text-center text-danger">Error loading alerts.</td></tr>`;
                 }
             }
+
 
             fetchDoctorAlerts();
             fetchDoctorDetails();

@@ -75,7 +75,7 @@
 
         .feedback-icon {
             position: fixed;
-            top: 46.5%;
+            top: 43%;
             left: 50%;
             transform: translate(-50%, -50%);
             font-size: 80px;
@@ -167,7 +167,9 @@
         </div>
     </div>
     <!-- <h3 id="tries-left">Tries left: 5</h3> Display tries left -->
-    <h3 id="eye-indicator">Cover your left eye</h3> <!-- Display which eye is being tested -->
+    <h3 id="eye-indicator">1. Cover your <span style="color: #03c0ff;">left</span> eye.</h3> <!-- Display which eye is being tested -->
+    <h3 id="eye-indicator">2. Keep your deivce at arm's length.</h3> <!-- Display which eye is being tested -->
+    <h3 id="eye-indicator">3. See the top arrow? Mark the corresponding direction in the ring.</h3> <!-- Display which eye is being tested -->
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -266,7 +268,7 @@
                 if (currentEye === 'left') {
                     leftEyeScore = correctAnswers;
                     currentEye = 'right';
-                    $eyeIndicator.text('Cover your right eye');
+                    $eyeIndicator.html('1. Cover your <span style="color: #03c0ff;">right</span> eye');
                     showTransitionScreen();
                 } else {
                     rightEyeScore = correctAnswers;

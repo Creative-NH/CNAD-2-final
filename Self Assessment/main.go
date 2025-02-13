@@ -2,17 +2,20 @@ package main
 
 import (
 	"bytes"
+	"crypto/tls"
 	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
+	"gopkg.in/gomail.v2"
 )
 
 // Database connection function
@@ -89,7 +92,7 @@ type Assessment struct {
 	RiskLevel      string `json:"riskLevel"`
 	Recommendation string `json:"recommendation"`
 	DateCreated    string `json:"dateCreated,omitempty"`
-	UserID	   	   int 	  `json:"user_id,omitempty"`
+	UserID         int    `json:"user_id,omitempty"`
 }
 
 // Handler to retrieve questionnaire questions based on language (GET request with query string)
@@ -185,9 +188,10 @@ func sendNotification(userID int, riskLevel string) {
 func sendAlertToDoctors(userID int, assessmentID int64) {
 	log.Printf("Sending alert for high-risk user %d (Assessment ID: %d)\n", userID, assessmentID)
 
-	// Create JSON payload
+	// Create JSON payload with type "HealthAssessment"
 	alertBody, _ := json.Marshal(map[string]interface{}{
 		"assessment_id": assessmentID,
+		"type":          "HealthAssessment", // Explicitly setting the type
 	})
 
 	// Send POST request to Notification Service
@@ -199,6 +203,42 @@ func sendAlertToDoctors(userID int, assessmentID int64) {
 	defer resp.Body.Close()
 
 	log.Printf("Alert successfully sent for assessment %d\n", assessmentID)
+}
+
+// Email sender function
+func sendRiskAlertEmail(userID int, riskLevel string, assessmentID int64) {
+	// Set up email details
+	sender := "newuploadedvideo@gmail.com"
+	password := "agof rvwb lreo tups"          // Use an App Password if using Gmail
+	recipient := "s10247445@connect.np.edu.sg" // Change to the doctor's real email
+
+	// Email subject and body
+	subject := "Urgent: Risk Assessment Alert for User " + strconv.Itoa(userID)
+	body := fmt.Sprintf(`
+		<h2>Risk Assessment Alert</h2>
+		<p><strong>User ID:</strong> %d</p>
+		<p><strong>Risk Level:</strong> %s</p>
+		<p>Please review the report immediately.</p>
+		<p><a href="http://localhost:5500/report.html?assessment_id=%d" style="color: #007bff; font-weight: bold;">View Report</a></p>
+	`, userID, riskLevel, assessmentID)
+
+	// Configure SMTP
+	d := gomail.NewDialer("smtp.gmail.com", 587, sender, password)
+	d.TLSConfig = &tls.Config{InsecureSkipVerify: true}
+
+	// Create email message
+	m := gomail.NewMessage()
+	m.SetHeader("From", sender)
+	m.SetHeader("To", recipient)
+	m.SetHeader("Subject", subject)
+	m.SetBody("text/html", body)
+
+	// Send email
+	if err := d.DialAndSend(m); err != nil {
+		log.Println("Failed to send risk alert email:", err)
+	} else {
+		log.Println("Risk alert email sent successfully to", recipient)
+	}
 }
 
 // Add Results from Risk Assessment into DB
@@ -274,7 +314,12 @@ func addAssessmentHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 
 	assessmentID, _ := result.LastInsertId()
 
-	// if risk is moderate or high, Call Alert Service
+	// If risk is MODERATE or HIGH, send email to doctor
+	if riskResult.RiskLevel == "Moderate" || riskResult.RiskLevel == "High" {
+		go sendRiskAlertEmail(req.UserID, riskResult.RiskLevel, assessmentID)
+	}
+
+	// If risk is MODERATE or HIGH, send a notification
 	if riskResult.RiskLevel == "Moderate" || riskResult.RiskLevel == "High" {
 		go sendNotification(req.UserID, riskResult.RiskLevel)
 	}
@@ -283,7 +328,7 @@ func addAssessmentHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 	if riskResult.RiskLevel == "High" {
 		go sendAlertToDoctors(req.UserID, assessmentID)
 	}
-	
+
 	// Send response
 	response := map[string]interface{}{
 		"assessment_id":      assessmentID,

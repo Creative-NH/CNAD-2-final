@@ -183,8 +183,8 @@ func postHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 }
 
 func doctorNotificationHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
-	// Query database for alerts
-	query := `SELECT AlertID, AssessmentID, SentAt FROM Alerts WHERE SentAt >= NOW() - INTERVAL 3 DAY ORDER BY SentAt DESC`
+	// Query database for alerts, including the `type` column
+	query := `SELECT AlertID, AssessmentID, Type, SentAt FROM Alerts WHERE SentAt >= NOW() - INTERVAL 3 DAY ORDER BY SentAt DESC`
 	rows, err := db.Query(query)
 	if err != nil {
 		log.Println("Database query error:", err)
@@ -198,9 +198,10 @@ func doctorNotificationHandler(w http.ResponseWriter, r *http.Request, db *sql.D
 	// Iterate over rows
 	for rows.Next() {
 		var alertID, assessmentID int
+		var alertType string
 		var sentAt time.Time
 
-		if err := rows.Scan(&alertID, &assessmentID, &sentAt); err != nil {
+		if err := rows.Scan(&alertID, &assessmentID, &alertType, &sentAt); err != nil {
 			log.Println("Error scanning row:", err)
 			http.Error(w, "Failed to process data", http.StatusInternalServerError)
 			return
@@ -209,6 +210,7 @@ func doctorNotificationHandler(w http.ResponseWriter, r *http.Request, db *sql.D
 		alerts = append(alerts, map[string]interface{}{
 			"alert_id":      alertID,
 			"assessment_id": assessmentID,
+			"type":          alertType, // Includes the type column
 			"sent_at":       sentAt.Format("2006-01-02 15:04:05"),
 		})
 	}
@@ -227,7 +229,8 @@ func doctorNotificationHandler(w http.ResponseWriter, r *http.Request, db *sql.D
 
 func doctorPostHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 	type Request struct {
-		AssessmentID int `json:"assessment_id"`
+		AssessmentID int    `json:"assessment_id"`
+		Type         string `json:"type"` // New field for type
 	}
 	var req Request
 
@@ -239,15 +242,15 @@ func doctorPostHandler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 	}
 
 	// Validate input
-	if req.AssessmentID <= 0 {
-		log.Println("Invalid input: AssessmentID missing")
-		http.Error(w, "Invalid input: AssessmentID missing", http.StatusBadRequest)
+	if req.AssessmentID <= 0 || (req.Type != "HealthAssessment" && req.Type != "VisionAssessment") {
+		log.Println("Invalid input: AssessmentID or Type missing/invalid")
+		http.Error(w, "Invalid input: AssessmentID and valid Type (HealthAssessment/VisionAssessment) required", http.StatusBadRequest)
 		return
 	}
 
-	// Insert into database
-	query := `INSERT INTO Alerts (AssessmentID) VALUES (?)`
-	_, err := db.Exec(query, req.AssessmentID)
+	// Insert into database with type
+	query := `INSERT INTO Alerts (AssessmentID, Type) VALUES (?, ?)`
+	_, err := db.Exec(query, req.AssessmentID, req.Type)
 	if err != nil {
 		log.Println("Database insert error:", err)
 		http.Error(w, "Failed to store alert", http.StatusInternalServerError)

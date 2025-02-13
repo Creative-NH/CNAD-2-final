@@ -12,6 +12,7 @@ import (
 )
 
 type VisionResult struct {
+	ID            int    `json:"ID"` // Add this to store vision assessment ID
 	UserID        int    `json:"UserID"`
 	LeftEyeScore  int    `json:"LeftEyeScore"`
 	RightEyeScore int    `json:"RightEyeScore"`
@@ -22,11 +23,14 @@ type VisionResult struct {
 // Function to send email using Gmail SMTP
 func sendEmailToDoctor(result VisionResult) error {
 	m := gomail.NewMessage()
-	m.SetHeader("From", "newuploadedvideo@gmail.com") // Your sender email
+	m.SetHeader("From", "newuploadedvideo@gmail.com") // Sender's email
 	m.SetHeader("To", "s10247445@connect.np.edu.sg")  // Doctor's email
 	m.SetHeader("Subject", "Urgent: Vision Test Report for User ID "+strconv.Itoa(result.UserID))
 
-	// Email body with hyperlink to doctorHome.html
+	// Construct the correct report URL using visionAssessment_id
+	reportURL := fmt.Sprintf("http://localhost:5500/report.html?visionAssessment_id=%d", result.ID)
+
+	// Email body with correct report link
 	body := fmt.Sprintf(`
 		<h2>Vision Test Report</h2>
 		<p><strong>User ID:</strong> %d</p>
@@ -34,8 +38,8 @@ func sendEmailToDoctor(result VisionResult) error {
 		<p><strong>Right Eye Score:</strong> %d</p>
 		<p><strong>Comments:</strong> %s</p>
 		<p>Please review the report and advise accordingly.</p>
-		<p><a href="http://localhost:5500/doctorLogin.html" style="color: #007bff; font-weight: bold;">Click here to view the report</a></p>
-	`, result.UserID, result.LeftEyeScore, result.RightEyeScore, result.Comments)
+		<p><a href="%s" style="color: #007bff; font-weight: bold;">Click here to view the report</a></p>
+	`, result.UserID, result.LeftEyeScore, result.RightEyeScore, result.Comments, reportURL)
 
 	m.SetBody("text/html", body)
 

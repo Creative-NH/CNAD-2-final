@@ -96,10 +96,10 @@
             Left Eye Score: <span id="left-eye-score"></span><br>
             Right Eye Score: <span id="right-eye-score"></span>
         </div>
+        <p id="result-date" class="text-muted"></p> <!-- Displays test date -->
         <div class="comments">
             Comments: <span id="result-comments"></span>
         </div>
-
         
         <!-- Message for Automatic Report Sending -->
         <p id="doctor-message" class="doctor-message">Your report has been sent to the doctor for review.</p>
@@ -121,7 +121,9 @@
         // Function to fetch the latest result from the database
         async function fetchLatestResult() {
             try {
-                const response = await fetch(`http://localhost:8088/getLatestResult?userID=${userID}`); // Corrected string interpolation
+                const userID = localStorage.getItem("user_id"); // Retrieve user ID from localStorage
+                const response = await fetch(`http://localhost:8088/getLatestResult?userID=${userID}`);
+
                 if (!response.ok) {
                     throw new Error('Failed to fetch result');
                 }
@@ -132,6 +134,61 @@
                 return null;
             }
         }
+
+        // Function to display the result
+        async function displayResult() {
+            const result = await fetchLatestResult();
+            if (result) {
+                const { ID, LeftEyeScore, RightEyeScore, Comments, CreatedAt } = result; // Added ID and CreatedAt
+                const { outcome, imageSrc } = determineOutcome(LeftEyeScore, RightEyeScore);
+
+                // Convert numeric scores to word terms and colors
+                const leftEye = getVisionTerm(LeftEyeScore);
+                const rightEye = getVisionTerm(RightEyeScore);
+
+                // Format CreatedAt to a readable date & time
+                const formattedDate = new Date(CreatedAt).toLocaleString();
+
+                // Display the result
+                document.getElementById('result-outcome').textContent = outcome;
+                document.getElementById('result-image').src = imageSrc;
+                document.getElementById('left-eye-score').innerHTML = `<span class="${leftEye.color}">${leftEye.text}</span>`;
+                document.getElementById('right-eye-score').innerHTML = `<span class="${rightEye.color}">${rightEye.text}</span>`;
+                document.getElementById('result-comments').textContent = Comments;
+                document.getElementById('result-date').textContent = `Test Date: ${formattedDate}`; // Show formatted test date
+
+                // Show "View Report" button if any score is ≤ 2
+                if (LeftEyeScore <= 2 || RightEyeScore <= 2) {
+                    sendReportToDoctor(ID, LeftEyeScore, RightEyeScore);
+                }
+            } else {
+                document.getElementById('result-outcome').textContent = "Failed to load result.";
+            }
+        }
+
+        // Function to store alert into alert_db if vision score is low
+        // Function to store alert into alert_db for VisionAssessment
+        async function postAlert(resultID) {
+            try {
+                const response = await fetch("http://localhost:5002/api/postAlerts", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        assessment_id: resultID, // The ID of the vision assessment result
+                        type: "VisionAssessment" // Explicitly setting the type
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error("Failed to post alert");
+                }
+
+                console.log("Vision Test Alert successfully posted for result ID:", resultID);
+            } catch (error) {
+                console.error("Error posting vision test alert:", error);
+            }
+        }
+
 
         // Function to determine the outcome and image based on scores
         function determineOutcome(leftScore, rightScore) {
@@ -156,26 +213,34 @@
         }
 
         // Function to send an automatic report to the doctor if needed
-        function sendReportToDoctor(leftScore, rightScore) {
+        function sendReportToDoctor(ID, leftScore, rightScore) {
             if (leftScore <= 2 || rightScore <= 2) {
                 document.getElementById("doctor-message").style.display = "block";
+                postAlert(ID); // Store the vision ID into alerts table in notification_db
 
-                // Simulate sending report (Replace with actual API if available)
-                fetch("http://localhost:8088/sendReportToDoctor", {
+                // Construct the report URL with the vision assessment ID
+                const reportURL = `http://localhost:5500/report.html?visionAssessment_id=${ID}`;
+                // Prepare email request payload
+                const emailPayload = {
+                    user_id: 5, // You can replace this with the actual user ID if needed
+                    left_eye_score: leftScore,
+                    right_eye_score: rightScore,
+                    comments: "The user's vision is significantly reduced. Please review.",
+                    report_link: reportURL // Adding the report URL
+                };
+
+                // Send report email via API
+                fetch("http://localhost:8090/sendReportToDoctor", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        user_id: 5,
-                        left_eye_score: leftScore,
-                        right_eye_score: rightScore,
-                        comments: "The user's vision is significantly reduced. Please review."
-                    })
+                    body: JSON.stringify(emailPayload)
                 })
                 .then(response => response.json())
                 .then(data => console.log("Report sent to doctor:", data))
                 .catch(error => console.error("Error sending report:", error));
             }
         }
+
 
         // Function to convert numeric score to descriptive term with color
         function getVisionTerm(score) {
@@ -185,33 +250,6 @@
             if (score === 2) return { text: "Below Average", color: "text-warning fw-bold" };   // Yellow
             if (score === 1) return { text: "Weak Vision", color: "text-danger fw-bold" };      // Red
             return { text: "Severely Impaired", color: "text-dark fw-bold" };                   // Dark Gray (Score 0)
-        }
-
-        // Function to display the result
-        async function displayResult() {
-            const result = await fetchLatestResult();
-            if (result) {
-                const { LeftEyeScore, RightEyeScore, Comments } = result;
-                const { outcome, imageSrc } = determineOutcome(LeftEyeScore, RightEyeScore);
-
-                // Convert numeric scores to word terms and colors
-                const leftEye = getVisionTerm(LeftEyeScore);
-                const rightEye = getVisionTerm(RightEyeScore);
-
-                // Display the result
-                document.getElementById('result-outcome').textContent = outcome;
-                document.getElementById('result-image').src = imageSrc;
-                document.getElementById('left-eye-score').innerHTML = `<span class="${leftEye.color}">${leftEye.text}</span>`;
-                document.getElementById('right-eye-score').innerHTML = `<span class="${rightEye.color}">${rightEye.text}</span>`;
-                document.getElementById('result-comments').textContent = Comments;
-
-                // Show "View Report" button if any score is ≤ 2
-                if (LeftEyeScore <= 2 || RightEyeScore <= 2) {
-                    sendReportToDoctor(LeftEyeScore, RightEyeScore);
-                }
-            } else {
-                document.getElementById('result-outcome').textContent = "Failed to load result.";
-            }
         }
 
 
