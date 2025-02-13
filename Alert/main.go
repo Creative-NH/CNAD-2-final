@@ -12,6 +12,7 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
+	"github.com/joho/godotenv"
 	"github.com/rs/cors"
 )
 
@@ -26,6 +27,11 @@ func connectDB(dbUser, dbPassword, dbHost, dbName string) (*sql.DB, error) {
 }
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatalf("Error loading .env file")
+	}
+
 	// Get database connection details from environment variables
 	dbUser, dbPassword, dbHost, dbName := os.Getenv("DB_USER"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_HOST"), os.Getenv("DB_NAME")
 	if dbUser == "" || dbPassword == "" || dbHost == "" || dbName == "" {
